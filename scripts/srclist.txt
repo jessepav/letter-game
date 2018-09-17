@@ -1,0 +1,7 @@
+.idea
+assets
+scripts
+src
+letter-game.iml
+lettergame-ant-build.*
+README.txt
