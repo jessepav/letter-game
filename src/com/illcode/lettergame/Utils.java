@@ -1,9 +1,13 @@
 package com.illcode.lettergame;
 
+import java.util.Random;
+
 import static com.illcode.lettergame.LetterGame.prefs;
 
 public final class Utils
 {
+    private static Random random;
+
     /**
      * Examines a String to determine if it's a way to say "true"
      * @param s if this is "true", "on", "1", or "yes" then we consider it true
@@ -86,6 +90,15 @@ public final class Utils
         else if (i > max)
             return max;
         else return i;
+    }
+
+    /**
+     * Returns a random int between {@code min} and {@code max}, inclusive.
+     */
+    public static int randInt(int min, int max) {
+        if (random == null)
+            random = new Random();
+        return random.nextInt(max - min + 1) + min;
     }
 
     /** Equivalent to {@code String.format(s, args)} */

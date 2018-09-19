@@ -9,11 +9,15 @@ import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.List;
 
 import kuusisto.tinysound.Music;
 import kuusisto.tinysound.TinySound;
+
+import static com.illcode.lettergame.GameObjects.Cloud;
 
 final class GameWindow implements KeyListener
 {
@@ -27,7 +31,15 @@ final class GameWindow implements KeyListener
     private BlockingQueue<Character> charQueue;
 
     private BufferedImage background;
+    private float backgroundScaleX, backgroundScaleY;
+
+    private List<Cloud> clouds;
+    private int numclouds;
+
     private Music music;
+    private boolean playMusic;
+
+    private int cloudSpeed, letterSpeed;
 
     GameWindow() {
         charQueue = new ArrayBlockingQueue<>(30);
@@ -66,7 +78,8 @@ final class GameWindow implements KeyListener
         if (!initialized)
             return;
 
-        music.play(true);
+        if (playMusic)
+            music.play(true);
         int loopDelay = Utils.intPref("loop-delay", 40);
         while (!quitFlag) {
             Character c = charQueue.poll();
@@ -93,19 +106,20 @@ final class GameWindow implements KeyListener
     }
 
     void shutdown() {
-        if (!initialized)
-            return;
-
-        background.flush();
-        background = null;
-
-        music.stop();
-        music.unload();
-        music = null;
+        if (background != null) {
+            background.flush();
+            background = null;
+        }
+        if (music != null) {
+            music.stop();
+            music.unload();
+            music = null;
+        }
         TinySound.shutdown();
-
-        frame.setVisible(false);
-        frame.dispose();
+        if (frame != null) {
+            frame.setVisible(false);
+            frame.dispose();
+        }
     }
 
     public void keyTyped(KeyEvent e) {
@@ -131,27 +145,62 @@ final class GameWindow implements KeyListener
 
     private boolean loadAssets() {
         BufferedImage bi = GuiUtils.loadOpaqueImage(Paths.get(Utils.pref("background-image", "assets/snowy-wash.png")));
-        if (bi != null) {
-            background = GuiUtils.createOpaqueImage(width, height);
-            Graphics2D g = background.createGraphics();
-            g.setRenderingHints(GuiUtils.getQualityRenderingHints());
-            g.drawImage(bi, 0, 0, width, height, null);
-            g.dispose();
-            bi = null;
-        } else {
+        if (bi == null)
             return false;
+        backgroundScaleX = (float) width / bi.getWidth();
+        backgroundScaleY = (float) height / bi.getHeight();
+        background = GuiUtils.createOpaqueImage(width, height);
+        Graphics2D g = background.createGraphics();
+        g.setRenderingHints(GuiUtils.getQualityRenderingHints());
+        g.drawImage(bi, 0, 0, width, height, null);
+        g.dispose();
+        bi = null;
+
+        String[] cloudPaths = Utils.pref("cloud-images", "").split(",\\s*");
+        int numCloudImages = cloudPaths.length;
+        if (numCloudImages == 0)
+            return false;
+        BufferedImage[] cloudImages = new BufferedImage[numCloudImages];
+        for (int i = 0; i < numCloudImages; i++) {
+            bi = GuiUtils.loadBitmaskImage(Paths.get(cloudPaths[i]), -1);
+            if (bi == null)
+                return false;
+            int w = (int) (bi.getWidth() * backgroundScaleX);
+            int h = (int) (bi.getHeight() * backgroundScaleY);
+            cloudImages[i] = GuiUtils.createBitmaskImage(w, h);
+            g = cloudImages[i].createGraphics();
+            g.setRenderingHints(GuiUtils.getQualityRenderingHints());
+            g.drawImage(bi, 0, 0, w, h, null);
+            g.dispose();
         }
+        bi = null;
+
+        numclouds = Utils.intPref("numclouds", 3);
+        clouds = new ArrayList<>(numclouds);
+        for (int i = 0; i < numclouds; i++) {
+            Cloud c = new Cloud();
+            c.image = cloudImages[i % numCloudImages];
+            c.y = Utils.randInt(20, height / 3);  // distribute the clouds randomly over the top third of the window
+            c.x = Utils.randInt(-20, width - 20); // and randomly across the width
+            clouds.add(c);
+        }
+        // TODO: debug why the cloud images are not translucent
 
         TinySound.init();
-        music = TinySound.loadMusic(new File(Utils.pref("music", "assets/Treehouse-Intro-Music.ogg")));
-        if (music == null)
-            return false;
-
+        playMusic = Utils.booleanPref("play-music", true);
+        if (playMusic) {
+            music = TinySound.loadMusic(new File(Utils.pref("music", "assets/Treehouse-Intro-Music.ogg")));
+            if (music == null)
+                return false;
+        }
         return true;
     }
 
     private void drawBackground(Graphics2D g) {
         g.drawImage(background, 0, 0, null);
+        for (Cloud c : clouds) {
+            g.drawImage(c.image, c.x, c.y, null);
+        }
     }
 
     private void drawLetters(Graphics2D g) {

@@ -37,6 +37,11 @@ public class GuiUtils
         return graphicsConfiguration.createCompatibleImage(width, height, Transparency.OPAQUE);
     }
 
+    /** Creates a BufferedImage compatible with our default screen device, with TRANSLUCENT transparency. */
+    public static BufferedImage createTranslucentImage(int width, int height) {
+        return graphicsConfiguration.createCompatibleImage(width, height, Transparency.TRANSLUCENT);
+    }
+
     /** Load an opaque image from a given Path */
     public static BufferedImage loadOpaqueImage(Path p) {
         BufferedImage image;
