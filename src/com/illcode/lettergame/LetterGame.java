@@ -19,7 +19,13 @@ public class LetterGame
         }
         GuiUtils.initGraphics();
         gameWindow = new GameWindow();
-        gameWindow.init();
+        if (!gameWindow.init()) {
+            System.err.println("Error loading assets!");
+            System.exit(1);
+        } else {
+            gameWindow.gameLoop();
+            gameWindow.shutdown();
+        }
     }
 
     private static boolean loadPrefs(Path path) {

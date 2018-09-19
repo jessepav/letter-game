@@ -1,13 +1,8 @@
 package com.illcode.lettergame;
 
 import javax.imageio.ImageIO;
-import javax.swing.JComponent;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.KeyEvent;
-import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 
@@ -18,7 +13,7 @@ public class GuiUtils
     static Toolkit toolkit;
     static Font letterFont, monoFont;
 
-    private static RenderingHints renderingHints;
+    private static RenderingHints fastRenderingHints, qualityRenderingHints;
 
     static void initGraphics() {
         graphicsEnvironment = GraphicsEnvironment.getLocalGraphicsEnvironment();
@@ -121,22 +116,34 @@ public class GuiUtils
         BufferedImage subImage = img.getTransparency() == Transparency.OPAQUE
             ? createOpaqueImage(dw, dh) : createBitmaskImage(dw, dh);
         Graphics2D g2d = subImage.createGraphics();
-        g2d.setRenderingHints(getRenderingHints());
+        g2d.setRenderingHints(getFastRenderingHints());
         g2d.drawImage(img, 0, 0, dw, dh, sx1, sy1, sx2, sy2, null);
         g2d.dispose();
         return subImage;
     }
 
-    static RenderingHints getRenderingHints() {
-        if (renderingHints == null) {
-            renderingHints = new RenderingHints(null);
-            renderingHints.put(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_SPEED);
-            renderingHints.put(RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_SPEED);
-            renderingHints.put(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
-            renderingHints.put(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
-            renderingHints.put(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_SPEED);
+    static RenderingHints getFastRenderingHints() {
+        if (fastRenderingHints == null) {
+            fastRenderingHints = new RenderingHints(null);
+            fastRenderingHints.put(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_SPEED);
+            fastRenderingHints.put(RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_SPEED);
+            fastRenderingHints.put(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
+            fastRenderingHints.put(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+            fastRenderingHints.put(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_SPEED);
         }
-        return renderingHints;
+        return fastRenderingHints;
+    }
+
+    static RenderingHints getQualityRenderingHints() {
+        if (qualityRenderingHints == null) {
+            qualityRenderingHints = new RenderingHints(null);
+            qualityRenderingHints.put(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
+            qualityRenderingHints.put(RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_QUALITY);
+            qualityRenderingHints.put(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            qualityRenderingHints.put(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            qualityRenderingHints.put(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+        }
+        return qualityRenderingHints;
     }
 
     static boolean registerGameFonts() {

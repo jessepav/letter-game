@@ -1,5 +1,5 @@
 .idea
-assets
+assets-source
 scripts
 src
 letter-game.iml
