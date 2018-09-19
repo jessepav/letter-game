@@ -7,9 +7,13 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.nio.file.Paths;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+
+import kuusisto.tinysound.Music;
+import kuusisto.tinysound.TinySound;
 
 final class GameWindow implements KeyListener
 {
@@ -23,6 +27,7 @@ final class GameWindow implements KeyListener
     private BlockingQueue<Character> charQueue;
 
     private BufferedImage background;
+    private Music music;
 
     GameWindow() {
         charQueue = new ArrayBlockingQueue<>(30);
@@ -61,6 +66,7 @@ final class GameWindow implements KeyListener
         if (!initialized)
             return;
 
+        music.play(true);
         int loopDelay = Utils.intPref("loop-delay", 40);
         while (!quitFlag) {
             Character c = charQueue.poll();
@@ -89,6 +95,14 @@ final class GameWindow implements KeyListener
     void shutdown() {
         if (!initialized)
             return;
+
+        background.flush();
+        background = null;
+
+        music.stop();
+        music.unload();
+        music = null;
+        TinySound.shutdown();
 
         frame.setVisible(false);
         frame.dispose();
@@ -123,9 +137,15 @@ final class GameWindow implements KeyListener
             g.setRenderingHints(GuiUtils.getQualityRenderingHints());
             g.drawImage(bi, 0, 0, width, height, null);
             g.dispose();
+            bi = null;
         } else {
             return false;
         }
+
+        TinySound.init();
+        music = TinySound.loadMusic(new File(Utils.pref("music", "assets/Treehouse-Intro-Music.ogg")));
+        if (music == null)
+            return false;
 
         return true;
     }
