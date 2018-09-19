@@ -16,7 +16,7 @@ public class GuiUtils
     static GraphicsEnvironment graphicsEnvironment;
     static GraphicsConfiguration graphicsConfiguration;
     static Toolkit toolkit;
-    static Font letterFont;
+    static Font letterFont, monoFont;
 
     private static RenderingHints renderingHints;
 
@@ -140,7 +140,8 @@ public class GuiUtils
     }
 
     static boolean registerGameFonts() {
-        letterFont = Font.decode("Lucida Sans PLAIN 24");
+        letterFont = Font.decode(Utils.pref("letter-font", "Lucida Sans-PLAIN-24"));
+        monoFont = Font.decode(Utils.pref("mono-font", "Lucida Sans Typewriter-PLAIN-12"));
         return true;
     }
 
