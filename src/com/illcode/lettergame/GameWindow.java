@@ -36,6 +36,7 @@ final class GameWindow implements KeyListener
     private GraphicsDevice graphicsDevice;
     private BufferStrategy strategy;
     private FontRenderContext letterFRC;
+    private int letterScale;
 
     private volatile boolean quitFlag;
     private BlockingQueue<Character> charQueue;
@@ -102,6 +103,7 @@ final class GameWindow implements KeyListener
         strategy = frame.getBufferStrategy();
 
         letterSpeed = Utils.intPref("letter-speed", 5);
+        letterScale = Utils.intPref("letter-scale", 2);
 
         initialized = true;
         return true;
@@ -170,7 +172,7 @@ final class GameWindow implements KeyListener
         char c = e.getKeyChar();
         if (Character.isLetterOrDigit(c)) {
             try {
-                charQueue.put(c);
+                charQueue.put(Character.toUpperCase(c));
             } catch (InterruptedException e1) {
                 System.err.println("keyTyped() put interrupted.");
             }
@@ -323,9 +325,16 @@ final class GameWindow implements KeyListener
         l.height = h + 2*m;
         l.image = GuiUtils.createBitmaskImage(l.width, l.height);
         Graphics2D g = l.image.createGraphics();
+        g.setColor(Color.DARK_GRAY);  // for the shadow
+        layout.draw(g, m + xoff + 3, m + yoff + 3);
         g.setColor(color);
         layout.draw(g, m + xoff, m + yoff);
         g.dispose();
+        if (letterScale != 1) {
+            l.image = GuiUtils.getScaledImage(l.image, letterScale);
+            l.width *= letterScale;
+            l.height *= letterScale;
+        }
 
         return l;
     }
