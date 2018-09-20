@@ -18,12 +18,15 @@ public class LetterGame
             System.exit(1);
         }
         GuiUtils.initGraphics();
+        GuiUtils.registerGameFonts();
         gameWindow = new GameWindow();
-        if (!gameWindow.init()) {
-            System.err.println("Error loading assets!");
-            System.exit(1);
-        } else {
-            gameWindow.gameLoop();
+        try {
+            if (!gameWindow.init()) {
+                System.err.println("Error initializing!");
+            } else {
+                gameWindow.gameLoop();
+            }
+        } finally {
             gameWindow.shutdown();
         }
     }

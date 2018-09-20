@@ -6,7 +6,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Path;
 
-public class GuiUtils
+public final class GuiUtils
 {
     static GraphicsEnvironment graphicsEnvironment;
     static GraphicsConfiguration graphicsConfiguration;
@@ -48,6 +48,23 @@ public class GuiUtils
         try {
             BufferedImage bi = ImageIO.read(p.toFile());
             image = createOpaqueImage(bi.getWidth(), bi.getHeight());
+            Graphics g = image.getGraphics();
+            g.drawImage(bi, 0, 0, null);
+            g.dispose();
+            bi.flush();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            image = null;
+        }
+        return image;
+    }
+
+    /** Load a translucent image from a given Path */
+    public static BufferedImage loadTranslucentImage(Path p) {
+        BufferedImage image;
+        try {
+            BufferedImage bi = ImageIO.read(p.toFile());
+            image = createTranslucentImage(bi.getWidth(), bi.getHeight());
             Graphics g = image.getGraphics();
             g.drawImage(bi, 0, 0, null);
             g.dispose();
@@ -151,10 +168,8 @@ public class GuiUtils
         return qualityRenderingHints;
     }
 
-    static boolean registerGameFonts() {
+    static void registerGameFonts() {
         letterFont = Font.decode(Utils.pref("letter-font", "Lucida Sans-PLAIN-24"));
         monoFont = Font.decode(Utils.pref("mono-font", "Lucida Sans Typewriter-PLAIN-12"));
-        return true;
     }
-
 }

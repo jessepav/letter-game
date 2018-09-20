@@ -5,6 +5,9 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.font.FontRenderContext;
+import java.awt.font.TextLayout;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -24,9 +27,13 @@ final class GameWindow implements KeyListener
     private boolean initialized;
 
     private Frame frame;
-    private int width, height;
+    private int screenWidth, screenHeight;
+    private boolean fullscreen;
 
+    private GraphicsDevice graphicsDevice;
     private BufferStrategy strategy;
+    private FontRenderContext letterFRC;
+
     private volatile boolean quitFlag;
     private BlockingQueue<Character> charQueue;
 
@@ -35,11 +42,14 @@ final class GameWindow implements KeyListener
 
     private List<Cloud> clouds;
     private int numclouds;
+    private int cloudMinSpeed, cloudMaxSpeed;
 
     private Music music;
     private boolean playMusic;
 
-    private int cloudSpeed, letterSpeed;
+    private int letterSpeed;
+
+    private int loopCntr;
 
     GameWindow() {
         charQueue = new ArrayBlockingQueue<>(30);
@@ -49,60 +59,43 @@ final class GameWindow implements KeyListener
         if (initialized)
             return false;
 
-        // GraphicsDevice gd = GuiUtils.graphicsEnvironment.getDefaultScreenDevice();
-        width = Utils.intPref("window-width", 800);
-        height = Utils.intPref("window-height", 600);
+        graphicsDevice = GuiUtils.graphicsEnvironment.getDefaultScreenDevice();
+        fullscreen = Utils.booleanPref("fullscreen", false) && graphicsDevice.isFullScreenSupported();
+
+        if (fullscreen) {
+            DisplayMode mode = graphicsDevice.getDisplayMode();
+            screenWidth = mode.getWidth();
+            screenHeight = mode.getHeight();
+        } else {
+            screenWidth = Utils.intPref("window-width", 900);
+            screenHeight = Utils.intPref("window-height", 506);
+        }
         if (!loadAssets())
             return false;
 
         frame = new Frame(null, GuiUtils.graphicsConfiguration);
-        frame.setTitle("Little Bun's Letter Game");
         frame.setFocusTraversalKeysEnabled(false);
         frame.enableInputMethods(false);
         frame.setIgnoreRepaint(true);
         frame.addKeyListener(this);
         frame.addWindowListener(new GameWindowListener());
-        frame.setSize(width, height);
-        frame.setResizable(false);
-        frame.setLocationRelativeTo(null);
-        frame.setVisible(true);
+        if (fullscreen) {
+            frame.setUndecorated(true);
+            graphicsDevice.setFullScreenWindow(frame);
+        } else {
+            frame.setTitle("Little Bun's Letter Game");
+            frame.setSize(screenWidth, screenHeight);
+            frame.setResizable(false);
+            frame.setLocationRelativeTo(null);
+            frame.setVisible(true);
+        }
         frame.createBufferStrategy(2);
         strategy = frame.getBufferStrategy();
 
+        letterSpeed = Utils.intPref("letter-speed", 5);
+
         initialized = true;
         return true;
-    }
-
-    // Note that this is called from the main (not EDT!) thread
-    void gameLoop() {
-        if (!initialized)
-            return;
-
-        if (playMusic)
-            music.play(true);
-        int loopDelay = Utils.intPref("loop-delay", 40);
-        while (!quitFlag) {
-            Character c = charQueue.poll();
-            if (c != null)
-                addLetter(c);
-
-            do {
-                do {
-                    Graphics2D graphics = (Graphics2D) strategy.getDrawGraphics();
-                    graphics.setRenderingHints(GuiUtils.getFastRenderingHints());
-                    drawBackground(graphics);
-                    drawLetters(graphics);
-                    graphics.dispose();
-                } while (strategy.contentsRestored());
-                strategy.show();
-            } while (strategy.contentsLost());
-
-            try {
-                Thread.sleep(loopDelay);
-            } catch (InterruptedException e) {
-                System.err.println("gameLoop() sleep interrupted.");
-            }
-        }
     }
 
     void shutdown() {
@@ -116,9 +109,51 @@ final class GameWindow implements KeyListener
             music = null;
         }
         TinySound.shutdown();
+
         if (frame != null) {
+            if (fullscreen)
+                graphicsDevice.setFullScreenWindow(null);
+            strategy.dispose();
             frame.setVisible(false);
             frame.dispose();
+        }
+    }
+
+
+    // Note that this is called from the main (not EDT!) thread
+    void gameLoop() {
+        if (!initialized)
+            return;
+
+        if (playMusic)
+            music.play(true);
+
+        int loopDelay = Utils.intPref("loop-delay", 40);
+        while (!quitFlag) {
+            Character c = charQueue.poll();
+            if (c != null)
+                addLetter(c);
+
+            do {
+                do {
+                    Graphics2D graphics = (Graphics2D) strategy.getDrawGraphics();
+                    graphics.setRenderingHints(GuiUtils.getFastRenderingHints());
+                    if (letterFRC == null)
+                        letterFRC = graphics.getFontRenderContext();
+                    updateObjects();
+                    drawBackground(graphics);
+                    drawLetters(graphics);
+                    graphics.dispose();
+                } while (strategy.contentsRestored());
+                strategy.show();
+            } while (strategy.contentsLost());
+
+            try {
+                Thread.sleep(loopDelay);
+            } catch (InterruptedException e) {
+                System.err.println("gameLoop() sleep interrupted.");
+            }
+            loopCntr++;
         }
     }
 
@@ -147,12 +182,12 @@ final class GameWindow implements KeyListener
         BufferedImage bi = GuiUtils.loadOpaqueImage(Paths.get(Utils.pref("background-image", "assets/snowy-wash.png")));
         if (bi == null)
             return false;
-        backgroundScaleX = (float) width / bi.getWidth();
-        backgroundScaleY = (float) height / bi.getHeight();
-        background = GuiUtils.createOpaqueImage(width, height);
+        backgroundScaleX = (float) screenWidth / bi.getWidth();
+        backgroundScaleY = (float) screenHeight / bi.getHeight();
+        background = GuiUtils.createOpaqueImage(screenWidth, screenHeight);
         Graphics2D g = background.createGraphics();
         g.setRenderingHints(GuiUtils.getQualityRenderingHints());
-        g.drawImage(bi, 0, 0, width, height, null);
+        g.drawImage(bi, 0, 0, screenWidth, screenHeight, null);
         g.dispose();
         bi = null;
 
@@ -162,12 +197,12 @@ final class GameWindow implements KeyListener
             return false;
         BufferedImage[] cloudImages = new BufferedImage[numCloudImages];
         for (int i = 0; i < numCloudImages; i++) {
-            bi = GuiUtils.loadBitmaskImage(Paths.get(cloudPaths[i]), -1);
+            bi = GuiUtils.loadTranslucentImage(Paths.get(cloudPaths[i]));
             if (bi == null)
                 return false;
             int w = (int) (bi.getWidth() * backgroundScaleX);
             int h = (int) (bi.getHeight() * backgroundScaleY);
-            cloudImages[i] = GuiUtils.createBitmaskImage(w, h);
+            cloudImages[i] = GuiUtils.createTranslucentImage(w, h);
             g = cloudImages[i].createGraphics();
             g.setRenderingHints(GuiUtils.getQualityRenderingHints());
             g.drawImage(bi, 0, 0, w, h, null);
@@ -180,11 +215,25 @@ final class GameWindow implements KeyListener
         for (int i = 0; i < numclouds; i++) {
             Cloud c = new Cloud();
             c.image = cloudImages[i % numCloudImages];
-            c.y = Utils.randInt(20, height / 3);  // distribute the clouds randomly over the top third of the window
-            c.x = Utils.randInt(-20, width - 20); // and randomly across the width
+            c.width = c.image.getWidth();
+            c.height = c.image.getHeight();
             clouds.add(c);
         }
-        // TODO: debug why the cloud images are not translucent
+
+        String[] sa = Utils.pref("cloud-speed-range", "32,96").split(",\\s*");
+        if (sa.length != 2)
+            return false;
+        cloudMinSpeed = Utils.parseInt(sa[0], 32);
+        cloudMaxSpeed = Utils.parseInt(sa[1], 96);
+
+        // Distribute the clouds around the sky, with varying speed
+        int skyZoneSize = screenWidth / numclouds;
+        for (int i = 0; i < numclouds; i++) {
+            Cloud c = clouds.get(i);
+            c.x = skyZoneSize*i + Utils.randInt(10, skyZoneSize-10);
+            c.y = Utils.randInt(30, screenHeight / 3);
+            c.speed = Utils.randInt(cloudMinSpeed, cloudMaxSpeed);
+        }
 
         TinySound.init();
         playMusic = Utils.booleanPref("play-music", true);
@@ -196,19 +245,48 @@ final class GameWindow implements KeyListener
         return true;
     }
 
-    private void drawBackground(Graphics2D g) {
-        g.drawImage(background, 0, 0, null);
+    private void updateObjects() {
         for (Cloud c : clouds) {
-            g.drawImage(c.image, c.x, c.y, null);
+            c.moveCntr += c.speed;
+            int px = c.moveCntr >> 6;
+            c.moveCntr &= 0x3F;  // zero out everything but the bottom 6 bits
+            c.x += px;
+            if (c.x > (screenWidth + c.width)) {
+                c.x = -c.width / 2;
+                c.y = Utils.randInt(30, screenHeight / 3);
+                c.speed = Utils.randInt(cloudMinSpeed, cloudMaxSpeed);
+            }
         }
     }
 
-    private void drawLetters(Graphics2D g) {
+    private void drawBackground(Graphics2D g) {
+        g.drawImage(background, 0, 0, null);
+        for (Cloud c : clouds) {
+            g.drawImage(c.image, c.x - c.width/2, c.y - c.height/2, null);
+        }
+    }
 
+    private String currentLetter;
+
+    private void drawLetters(Graphics2D g) {
+        if (currentLetter != null) {
+            // This shows us how to get a precise bounding box for a letter drawn at 100,100
+            TextLayout layout = new TextLayout(currentLetter, GuiUtils.letterFont, letterFRC);
+            Rectangle2D r = layout.getPixelBounds(null, 0, 0);
+            int xoff = (int)-r.getX();
+            int yoff = (int)-r.getY();
+            int w = (int)r.getWidth();
+            int h = (int)r.getHeight();
+            g.setColor(Color.BLACK);
+            g.drawRect(100, 100, w, h);
+            g.setFont(GuiUtils.letterFont);
+            g.setColor(Color.RED);
+            layout.draw(g, 100 + xoff, 100 + yoff);
+        }
     }
 
     private void addLetter(char c) {
-        System.err.println("Add letter: " + c);
+        currentLetter = Character.toString(c);
     }
 
     private class GameWindowListener extends WindowAdapter
