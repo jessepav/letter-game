@@ -13,6 +13,8 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.List;
@@ -21,6 +23,7 @@ import kuusisto.tinysound.Music;
 import kuusisto.tinysound.TinySound;
 
 import static com.illcode.lettergame.GameObjects.Cloud;
+import static com.illcode.lettergame.GameObjects.Letter;
 
 final class GameWindow implements KeyListener
 {
@@ -44,6 +47,8 @@ final class GameWindow implements KeyListener
     private int numclouds;
     private int cloudMinSpeed, cloudMaxSpeed;
 
+    private Map<Character,Letter> letterArchetypes;
+
     private Music music;
     private boolean playMusic;
 
@@ -53,6 +58,7 @@ final class GameWindow implements KeyListener
 
     GameWindow() {
         charQueue = new ArrayBlockingQueue<>(30);
+        letterArchetypes = new HashMap<>(80);
     }
 
     boolean init() {
@@ -266,27 +272,43 @@ final class GameWindow implements KeyListener
         }
     }
 
-    private String currentLetter;
+    private Letter currentLetter;
 
     private void drawLetters(Graphics2D g) {
         if (currentLetter != null) {
-            // This shows us how to get a precise bounding box for a letter drawn at 100,100
-            TextLayout layout = new TextLayout(currentLetter, GuiUtils.letterFont, letterFRC);
-            Rectangle2D r = layout.getPixelBounds(null, 0, 0);
-            int xoff = (int)-r.getX();
-            int yoff = (int)-r.getY();
-            int w = (int)r.getWidth();
-            int h = (int)r.getHeight();
-            g.setColor(Color.BLACK);
-            g.drawRect(100, 100, w, h);
-            g.setFont(GuiUtils.letterFont);
+            g.drawImage(currentLetter.image, 100, 100, null);
             g.setColor(Color.RED);
-            layout.draw(g, 100 + xoff, 100 + yoff);
+            g.drawRect(100, 100, currentLetter.width, currentLetter.height);
         }
     }
 
     private void addLetter(char c) {
-        currentLetter = Character.toString(c);
+        Letter l = letterArchetypes.get(c);
+        if (l == null) {
+            l = createLetter(c, Color.BLACK);
+            letterArchetypes.put(c, l);
+        }
+        currentLetter = l;
+    }
+
+    private Letter createLetter(char c, Color color) {
+        Letter l = new Letter();
+        TextLayout layout = new TextLayout(Character.toString(c), GuiUtils.letterFont, letterFRC);
+        Rectangle2D r = layout.getPixelBounds(null, 0, 0);
+        int xoff = (int)-r.getX();
+        int yoff = (int)-r.getY();
+        int w = (int)r.getWidth();
+        int h = (int)r.getHeight();
+        int m = 5;  // margin
+        l.width = w + 2*m;
+        l.height = h + 2*m;
+        l.image = GuiUtils.createBitmaskImage(l.width, l.height);
+        Graphics2D g = l.image.createGraphics();
+        g.setColor(color);
+        layout.draw(g, m + xoff, m + yoff);
+        g.dispose();
+
+        return l;
     }
 
     private class GameWindowListener extends WindowAdapter

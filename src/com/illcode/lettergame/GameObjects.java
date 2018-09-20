@@ -14,6 +14,8 @@ final class GameObjects
 
     static final class Letter
     {
-
+        char letter;
+        BufferedImage image;
+        int x, y, width, height;
     }
 }
