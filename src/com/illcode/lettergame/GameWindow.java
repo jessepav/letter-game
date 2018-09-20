@@ -48,6 +48,7 @@ final class GameWindow implements KeyListener
     private int cloudMinSpeed, cloudMaxSpeed;
 
     private Map<Character,Letter> letterArchetypes;
+    private Color[] letterColors;
 
     private Music music;
     private boolean playMusic;
@@ -77,6 +78,8 @@ final class GameWindow implements KeyListener
             screenHeight = Utils.intPref("window-height", 506);
         }
         if (!loadAssets())
+            return false;
+        if (!loadColors())
             return false;
 
         frame = new Frame(null, GuiUtils.graphicsConfiguration);
@@ -251,6 +254,22 @@ final class GameWindow implements KeyListener
         return true;
     }
 
+    private boolean loadColors() {
+        String[] sa = Utils.pref("letter-colors", "").split(",\\s*");
+        int n = sa.length;
+        if (n == 0)
+            return false;
+        letterColors = new Color[n];
+        try {
+            for (int i = 0; i < n; i++)
+                letterColors[i] = new Color(Integer.parseInt(sa[i], 16));
+        } catch (NumberFormatException ex) {
+            ex.printStackTrace();
+            return false;
+        }
+        return true;
+    }
+
     private void updateObjects() {
         for (Cloud c : clouds) {
             c.moveCntr += c.speed;
@@ -285,7 +304,7 @@ final class GameWindow implements KeyListener
     private void addLetter(char c) {
         Letter l = letterArchetypes.get(c);
         if (l == null) {
-            l = createLetter(c, Color.BLACK);
+            l = createLetter(c, letterColors[Utils.randInt(0, letterColors.length - 1)]);
             letterArchetypes.put(c, l);
         }
         currentLetter = l;
