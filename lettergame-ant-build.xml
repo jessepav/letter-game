@@ -56,37 +56,6 @@
     <exclude name="**/?*.clj"/>
   </patternset>
   
-  <!-- JDK definitions -->
-  
-  <property name="jdk.bin.java_7" value="${jdk.home.java_7}/bin"/>
-  <path id="jdk.classpath.java_7">
-    <fileset dir="${jdk.home.java_7}">
-      <include name="jre/lib/charsets.jar"/>
-      <include name="jre/lib/deploy.jar"/>
-      <include name="jre/lib/javaws.jar"/>
-      <include name="jre/lib/jce.jar"/>
-      <include name="jre/lib/jfr.jar"/>
-      <include name="jre/lib/jfxrt.jar"/>
-      <include name="jre/lib/jsse.jar"/>
-      <include name="jre/lib/management-agent.jar"/>
-      <include name="jre/lib/plugin.jar"/>
-      <include name="jre/lib/resources.jar"/>
-      <include name="jre/lib/rt.jar"/>
-      <include name="jre/lib/ext/access-bridge-64.jar"/>
-      <include name="jre/lib/ext/dnsns.jar"/>
-      <include name="jre/lib/ext/jaccess.jar"/>
-      <include name="jre/lib/ext/localedata.jar"/>
-      <include name="jre/lib/ext/sunec.jar"/>
-      <include name="jre/lib/ext/sunjce_provider.jar"/>
-      <include name="jre/lib/ext/sunmscapi.jar"/>
-      <include name="jre/lib/ext/zipfs.jar"/>
-    </fileset>
-  </path>
-  
-  <property name="project.jdk.home" value="${jdk.home.java_7}"/>
-  <property name="project.jdk.bin" value="${jdk.bin.java_7}"/>
-  <property name="project.jdk.classpath" value="jdk.classpath.java_7"/>
-  
   
   <!-- Project Libraries -->
   
@@ -105,9 +74,6 @@
   <dirname property="module.letter-game.basedir" file="${ant.file}"/>
   
   
-  <property name="module.jdk.home.letter-game" value="${project.jdk.home}"/>
-  <property name="module.jdk.bin.letter-game" value="${project.jdk.bin}"/>
-  <property name="module.jdk.classpath.letter-game" value="${project.jdk.classpath}"/>
   
   <property name="compiler.args.letter-game" value="-encoding UTF-8 -source 1.7 ${compiler.args}"/>
   
@@ -119,7 +85,6 @@
   </path>
   
   <path id="letter-game.module.production.classpath">
-    <path refid="${module.jdk.classpath.letter-game}"/>
     <path refid="library.tinysound.classpath"/>
   </path>
   
@@ -129,7 +94,6 @@
   </path>
   
   <path id="letter-game.module.classpath">
-    <path refid="${module.jdk.classpath.letter-game}"/>
     <pathelement location="${letter-game.output.dir}"/>
     <path refid="library.tinysound.classpath"/>
   </path>
@@ -160,7 +124,7 @@
   
   <target name="compile.module.letter-game.production" description="Compile module letter-game; production classes">
     <mkdir dir="${letter-game.output.dir}"/>
-    <javac destdir="${letter-game.output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}" fork="true" executable="${module.jdk.bin.letter-game}/javac">
+    <javac destdir="${letter-game.output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}" fork="true">
       <compilerarg line="${compiler.args.letter-game}"/>
       <bootclasspath refid="letter-game.module.bootclasspath"/>
       <classpath refid="letter-game.module.production.classpath"/>
@@ -187,9 +151,45 @@
     <!-- Perform any build initialization in this target -->
   </target>
   
-  <target name="clean" depends="clean.module.letter-game" description="cleanup all"/>
+  <target name="clean" depends="clean.module.letter-game, clean.artifact.dist" description="cleanup all"/>
   
   <target name="build.modules" depends="init, clean, compile.module.letter-game" description="build all modules"/>
   
-  <target name="all" depends="build.modules" description="build all"/>
+  <target name="init.artifacts">
+    <property name="artifacts.temp.dir" value="${basedir}/__artifacts_temp"/>
+    <property name="artifact.output.dist" value="${basedir}/build/artifacts/dist"/>
+    <mkdir dir="${artifacts.temp.dir}"/>
+    <property name="temp.jar.path.LetterGame.jar" value="${artifacts.temp.dir}/LetterGame.jar"/>
+  </target>
+  
+  <target name="clean.artifact.dist" description="clean dist artifact output">
+    <delete dir="${artifact.output.dist}"/>
+  </target>
+  
+  <target name="artifact.dist" depends="init.artifacts, compile.module.letter-game" description="Build &#39;dist&#39; artifact">
+    <mkdir dir="${artifact.output.dist}"/>
+    <jar destfile="${temp.jar.path.LetterGame.jar}" duplicate="preserve" filesetmanifest="mergewithoutmain">
+      <zipfileset dir="${letter-game.output.dir}"/>
+    </jar>
+    <copy file="${temp.jar.path.LetterGame.jar}" tofile="${artifact.output.dist}/LetterGame.jar"/>
+    <mkdir dir="${artifact.output.dist}/lib"/>
+    <copy file="${basedir}/lib/jorbis-0.0.17.jar" tofile="${artifact.output.dist}/lib/jorbis-0.0.17.jar"/>
+    <copy file="${basedir}/lib/tinysound-1.1.1-local.jar" tofile="${artifact.output.dist}/lib/tinysound-1.1.1-local.jar"/>
+    <copy file="${basedir}/lib/tritonus_share.jar" tofile="${artifact.output.dist}/lib/tritonus_share.jar"/>
+    <copy file="${basedir}/lib/vorbisspi1.0.3.jar" tofile="${artifact.output.dist}/lib/vorbisspi1.0.3.jar"/>
+    <mkdir dir="${artifact.output.dist}/assets"/>
+    <copy todir="${artifact.output.dist}/assets">
+      <fileset dir="${basedir}/assets"/>
+    </copy>
+    <copy file="${basedir}/lettergame.properties" tofile="${artifact.output.dist}/lettergame.properties"/>
+    <copy file="${basedir}/scripts/run.bat" tofile="${artifact.output.dist}/run.bat"/>
+  </target>
+  
+  <target name="build.all.artifacts" depends="artifact.dist" description="Build all artifacts">
+    
+    <!-- Delete temporary files -->
+    <delete dir="${artifacts.temp.dir}"/>
+  </target>
+  
+  <target name="all" depends="build.modules, build.all.artifacts" description="build all"/>
 </project>

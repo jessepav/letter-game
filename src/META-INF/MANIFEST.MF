@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+Class-Path: lib/jorbis-0.0.17.jar lib/tinysound-1.1.1-local.jar lib/tritonus_share.jar lib/vorbisspi1.0.3.jar
+Main-Class: com.illcode.lettergame.LetterGame
+
