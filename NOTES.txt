@@ -1,0 +1,3 @@
+Something to consider: instead of scaling both horizontally and vertically to fit
+the graphics to the window / full-screen, only scale horizontally, so the aspect
+ratio of the background is preserved.

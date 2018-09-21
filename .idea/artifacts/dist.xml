@@ -11,8 +11,8 @@
       <element id="directory" name="assets">
         <element id="dir-copy" path="$PROJECT_DIR$/assets" />
       </element>
-      <element id="file-copy" path="$PROJECT_DIR$/lettergame.properties" />
       <element id="file-copy" path="$PROJECT_DIR$/scripts/run.bat" />
+      <element id="file-copy" path="$PROJECT_DIR$/lettergame.dist.properties" output-file-name="lettergame.properties" />
     </root>
   </artifact>
 </component>

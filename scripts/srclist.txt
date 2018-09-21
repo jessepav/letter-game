@@ -6,3 +6,4 @@ letter-game.iml
 lettergame-ant-build.*
 README.txt
 lettergame.properties
+lettergame.dist.properties
