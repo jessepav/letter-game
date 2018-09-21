@@ -27,10 +27,21 @@ public final class Utils
      * @return int value of {@code s} if parseable, or {@code errorVal} otherwise
      */
     public static int parseInt(String s, int errorVal) {
+        return parseInt(s, 10, errorVal);
+    }
+
+    /**
+     * Parses an input string as an integer of the given radix
+     * @param s String representation of an integer
+     * @param radix integer radix
+     * @param errorVal if {@code s} is not successfully parsed, we return this value
+     * @return int value of {@code s} if parseable, or {@code errorVal} otherwise
+     */
+    public static int parseInt(String s, int radix, int errorVal) {
         int i = errorVal;
         if (s != null && s.length() > 0) {
             try {
-                i = Integer.parseInt(s);
+                i = Integer.parseInt(s, radix);
             } catch (NumberFormatException ex) {
                 i = errorVal;
             }
