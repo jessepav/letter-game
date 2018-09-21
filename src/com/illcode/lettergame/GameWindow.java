@@ -50,6 +50,7 @@ final class GameWindow implements KeyListener
 
     private Map<Character,Letter> letterArchetypes;
     private Color[] letterColors;
+    private Color shadowColor;
 
     private Music music;
     private boolean playMusic;
@@ -269,6 +270,10 @@ final class GameWindow implements KeyListener
             ex.printStackTrace();
             return false;
         }
+        int rgb = Utils.parseInt(Utils.pref("shadow-color", "676767"), 16, -1);
+        if (rgb == -1)
+            return false;
+        shadowColor = new Color(rgb);
         return true;
     }
 
@@ -325,7 +330,7 @@ final class GameWindow implements KeyListener
         l.height = h + 2*m;
         l.image = GuiUtils.createBitmaskImage(l.width, l.height);
         Graphics2D g = l.image.createGraphics();
-        g.setColor(Color.DARK_GRAY);  // for the shadow
+        g.setColor(shadowColor);
         layout.draw(g, m + xoff + 3, m + yoff + 3);
         g.setColor(color);
         layout.draw(g, m + xoff, m + yoff);
