@@ -83,6 +83,8 @@ final class GameWindow implements KeyListener
             return false;
         if (!loadColors())
             return false;
+        GuiUtils.letterFont = GuiUtils.letterFont.deriveFont
+            (GuiUtils.letterFont.getSize2D() * (backgroundScaleX + backgroundScaleY) / 2);
 
         frame = new Frame(null, GuiUtils.graphicsConfiguration);
         frame.setFocusTraversalKeysEnabled(false);
@@ -121,7 +123,14 @@ final class GameWindow implements KeyListener
             music = null;
         }
         TinySound.shutdown();
-
+        if (clouds != null) {
+            for (Cloud c : clouds)
+                c.image.flush();
+            clouds = null;
+        }
+        for (Letter l : letters)
+            l.image.flush();
+        letters.clear();
         if (frame != null) {
             if (fullscreen)
                 graphicsDevice.setFullScreenWindow(null);
@@ -253,6 +262,7 @@ final class GameWindow implements KeyListener
             music = TinySound.loadMusic(new File(Utils.pref("music", "assets/Treehouse-Intro-Music.ogg")));
             if (music == null)
                 return false;
+            music.setVolume(Utils.floatPref("music-volume", 1.0f));
         }
         return true;
     }
@@ -310,15 +320,16 @@ final class GameWindow implements KeyListener
     }
 
     private void drawLetters(Graphics2D g) {
-        for (Letter l : letters)
+        for (Letter l : letters) {
             g.drawImage(l.image, l.x, l.y, null);
+        }
     }
 
     private void addLetter(char c) {
         Letter archetype = letterArchetypes.get(c);
         Letter newLetter;
         if (archetype == null) {
-            archetype = createLetter(c, letterColors[Utils.randInt(0, letterColors.length - 1)]);
+            archetype = createLetter(c, getColorForLetter(c));
             letterArchetypes.put(c, archetype);
             newLetter = archetype;
         } else {
@@ -329,6 +340,17 @@ final class GameWindow implements KeyListener
         newLetter.moveCntr = 0;
         letters.add(newLetter);
         playLetterSound(c);
+    }
+
+    private Color getColorForLetter(char c) {
+        int idx;
+        if (c >= '0' && c <= '9')
+            idx = 26 + (c - '0');
+        else if (c >= 'A' && c <= 'Z')
+            idx = c - 'A';
+        else
+            idx = 0;
+        return letterColors[idx % letterColors.length];
     }
 
     private void playLetterSound(char c) {
@@ -358,7 +380,6 @@ final class GameWindow implements KeyListener
             l.width *= letterScale;
             l.height *= letterScale;
         }
-
         return l;
     }
 
