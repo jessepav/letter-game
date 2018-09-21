@@ -16,6 +16,16 @@ final class GameObjects
     {
         char letter;
         BufferedImage image;
+        int moveCntr;
         int x, y, width, height;
+
+        Letter makeCopy() {
+            Letter l = new Letter();
+            l.letter = letter;
+            l.image = image;
+            l.width = width;
+            l.height = height;
+            return l;
+        }
     }
 }

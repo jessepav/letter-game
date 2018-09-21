@@ -12,12 +12,10 @@ import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.List;
 
 import kuusisto.tinysound.Music;
 import kuusisto.tinysound.TinySound;
@@ -49,6 +47,7 @@ final class GameWindow implements KeyListener
     private int cloudMinSpeed, cloudMaxSpeed;
 
     private Map<Character,Letter> letterArchetypes;
+    private List<Letter> letters;
     private Color[] letterColors;
     private Color shadowColor;
 
@@ -62,6 +61,7 @@ final class GameWindow implements KeyListener
     GameWindow() {
         charQueue = new ArrayBlockingQueue<>(30);
         letterArchetypes = new HashMap<>(80);
+        letters = new LinkedList<>();
     }
 
     boolean init() {
@@ -289,6 +289,17 @@ final class GameWindow implements KeyListener
                 c.speed = Utils.randInt(cloudMinSpeed, cloudMaxSpeed);
             }
         }
+
+        ListIterator<Letter> iter = letters.listIterator(0);
+        while (iter.hasNext()) {
+            Letter l = iter.next();
+            l.moveCntr += letterSpeed;
+            int px = l.moveCntr >> 6;
+            l.moveCntr &= 0x3F;
+            l.y += px;
+            if (l.y > screenHeight)
+                iter.remove();
+        }
     }
 
     private void drawBackground(Graphics2D g) {
@@ -298,23 +309,30 @@ final class GameWindow implements KeyListener
         }
     }
 
-    private Letter currentLetter;
-
     private void drawLetters(Graphics2D g) {
-        if (currentLetter != null) {
-            g.drawImage(currentLetter.image, 100, 100, null);
-            g.setColor(Color.RED);
-            g.drawRect(100, 100, currentLetter.width, currentLetter.height);
-        }
+        for (Letter l : letters)
+            g.drawImage(l.image, l.x, l.y, null);
     }
 
     private void addLetter(char c) {
-        Letter l = letterArchetypes.get(c);
-        if (l == null) {
-            l = createLetter(c, letterColors[Utils.randInt(0, letterColors.length - 1)]);
-            letterArchetypes.put(c, l);
+        Letter archetype = letterArchetypes.get(c);
+        Letter newLetter;
+        if (archetype == null) {
+            archetype = createLetter(c, letterColors[Utils.randInt(0, letterColors.length - 1)]);
+            letterArchetypes.put(c, archetype);
+            newLetter = archetype;
+        } else {
+            newLetter = archetype.makeCopy();
         }
-        currentLetter = l;
+        newLetter.x = Utils.randInt(5, screenWidth - 5 - newLetter.width);
+        newLetter.y = -newLetter.height * 3 / 4;
+        newLetter.moveCntr = 0;
+        letters.add(newLetter);
+        playLetterSound(c);
+    }
+
+    private void playLetterSound(char c) {
+
     }
 
     private Letter createLetter(char c, Color color) {
