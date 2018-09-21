@@ -18,6 +18,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
 import kuusisto.tinysound.Music;
+import kuusisto.tinysound.Sound;
 import kuusisto.tinysound.TinySound;
 
 import static com.illcode.lettergame.GameObjects.Cloud;
@@ -53,6 +54,11 @@ final class GameWindow implements KeyListener
 
     private Music music;
     private boolean playMusic;
+
+    private Sound[] letterSounds;
+    private boolean playSound;
+    private double soundVolume;
+    private long lastSoundTime;
 
     private int letterSpeed;
 
@@ -121,6 +127,13 @@ final class GameWindow implements KeyListener
             music.stop();
             music.unload();
             music = null;
+        }
+        if (letterSounds != null) {
+            for (Sound s : letterSounds) {
+                s.stop();
+                s.unload();
+            }
+            letterSounds = null;
         }
         TinySound.shutdown();
         if (clouds != null) {
@@ -264,6 +277,20 @@ final class GameWindow implements KeyListener
                 return false;
             music.setVolume(Utils.floatPref("music-volume", 1.0f));
         }
+        playSound = Utils.booleanPref("play-sounds", true);
+        if (playSound) {
+            soundVolume = Utils.floatPref("sound-volume", 1.0f);
+            sa = Utils.pref("letter-sounds", "").split(",\\s*");
+            int n = sa.length;
+            if (n == 0)
+                return false;
+            letterSounds = new Sound[n];
+            for (int i = 0; i < n; i++) {
+                letterSounds[i] = TinySound.loadSound(new File(sa[i]));
+                if (letterSounds[i] == null)
+                    return false;
+            }
+        }
         return true;
     }
 
@@ -339,7 +366,8 @@ final class GameWindow implements KeyListener
         newLetter.y = -newLetter.height * 3 / 4;
         newLetter.moveCntr = 0;
         letters.add(newLetter);
-        playLetterSound(c);
+        if (playSound)
+            playLetterSound(c);
     }
 
     private Color getColorForLetter(char c) {
@@ -354,7 +382,11 @@ final class GameWindow implements KeyListener
     }
 
     private void playLetterSound(char c) {
-
+        long t = System.currentTimeMillis();
+        if (t - lastSoundTime > 200) {  // don't play sounds too close together
+            letterSounds[c % letterSounds.length].play(soundVolume);
+            lastSoundTime = t;
+        }
     }
 
     private Letter createLetter(char c, Color color) {
