@@ -42,7 +42,7 @@
       <java mainClass="com.illcode.lettergame.LetterGame" vmParameters="" arguments="" allowVMPassthroughParameters="true" preferredVM="" bundleRuntime="true">
         <classPath>
           <archive location="LetterGame.jar" failOnError="true" />
-          <directory location="lib" failOnError="true" />
+          <scanDirectory location="lib" failOnError="true" />
         </classPath>
         <nativeLibraryDirectories />
       </java>

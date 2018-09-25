@@ -181,8 +181,8 @@
     <copy todir="${artifact.output.dist}/assets">
       <fileset dir="${basedir}/assets"/>
     </copy>
-    <copy file="${basedir}/lettergame.properties" tofile="${artifact.output.dist}/lettergame.properties"/>
     <copy file="${basedir}/scripts/run.bat" tofile="${artifact.output.dist}/run.bat"/>
+    <copy file="${basedir}/lettergame.dist.properties" tofile="${artifact.output.dist}/lettergame.properties"/>
   </target>
   
   <target name="build.all.artifacts" depends="artifact.dist" description="Build all artifacts">
