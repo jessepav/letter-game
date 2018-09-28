@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <install4j version="4.2.8" transformSequenceNumber="2">
   <directoryPresets config="./assets" />
-  <application name="LetterGame" distributionSourceDir="" applicationId="0353-8499-9463-6691" mediaDir="./build/install4j" mediaFilePattern="${compiler:sys.shortName}${compiler:sys.version}" compression="6" lzmaCompression="false" pack200Compression="false" excludeSignedFromPacking="true" keepModificationTimes="true" missingFilesStrategy="warn" shortName="lettergame" publisher="" publisherWeb="" version="1.0" allPathsRelative="true" backupOnSave="false" autoSave="false" convertDotsToUnderscores="false" macSignature="????" installerName="" javaMinVersion="1.7" javaMaxVersion="1.8" allowBetaVM="false" jdkMode="runtimeJre" jdkName="">
+  <application name="LetterGame" distributionSourceDir="" applicationId="0353-8499-9463-6691" mediaDir="./build/install4j" mediaFilePattern="${compiler:sys.shortName}${compiler:sys.version}" compression="6" lzmaCompression="false" pack200Compression="false" excludeSignedFromPacking="true" keepModificationTimes="true" missingFilesStrategy="warn" shortName="lettergame" publisher="" publisherWeb="" version="1.1" allPathsRelative="true" backupOnSave="false" autoSave="false" convertDotsToUnderscores="false" macSignature="????" installerName="" javaMinVersion="1.7" javaMaxVersion="1.8" allowBetaVM="false" jdkMode="runtimeJre" jdkName="">
     <languages skipLanguageSelection="false" languageSelectionInPrincipalLanguage="false">
       <principalLanguage id="en" customLocalizationFile="" />
       <additionalLanguages />

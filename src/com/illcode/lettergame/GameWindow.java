@@ -51,6 +51,7 @@ final class GameWindow implements KeyListener
     private List<Letter> letters;
     private Color[] letterColors;
     private Color shadowColor;
+    private boolean singleLetterMode;
 
     private Music music;
     private boolean playMusic;
@@ -113,6 +114,7 @@ final class GameWindow implements KeyListener
 
         letterSpeed = Utils.intPref("letter-speed", 5);
         letterScale = Utils.intPref("letter-scale", 2);
+        singleLetterMode = Utils.booleanPref("single-letter-mode", false);
 
         initialized = true;
         return true;
@@ -193,7 +195,7 @@ final class GameWindow implements KeyListener
 
     public void keyTyped(KeyEvent e) {
         char c = e.getKeyChar();
-        if (Character.isLetterOrDigit(c)) {
+        if (c == ' ' || Character.isLetterOrDigit(c)) {
             try {
                 charQueue.put(Character.toUpperCase(c));
             } catch (InterruptedException e1) {
@@ -327,15 +329,17 @@ final class GameWindow implements KeyListener
             }
         }
 
-        ListIterator<Letter> iter = letters.listIterator(0);
-        while (iter.hasNext()) {
-            Letter l = iter.next();
-            l.moveCntr += letterSpeed;
-            int px = l.moveCntr >> 6;
-            l.moveCntr &= 0x3F;
-            l.y += px;
-            if (l.y > screenHeight)
-                iter.remove();
+        if (!singleLetterMode) {
+            ListIterator<Letter> iter = letters.listIterator(0);
+            while (iter.hasNext()) {
+                Letter l = iter.next();
+                l.moveCntr += letterSpeed;
+                int px = l.moveCntr >> 6;
+                l.moveCntr &= 0x3F;
+                l.y += px;
+                if (l.y > screenHeight)
+                    iter.remove();
+            }
         }
     }
 
@@ -353,6 +357,12 @@ final class GameWindow implements KeyListener
     }
 
     private void addLetter(char c) {
+        if (c == ' ') {
+            if (singleLetterMode)
+                letters.clear();
+            return;
+        }
+
         Letter archetype = letterArchetypes.get(c);
         Letter newLetter;
         if (archetype == null) {
@@ -362,9 +372,15 @@ final class GameWindow implements KeyListener
         } else {
             newLetter = archetype.makeCopy();
         }
-        newLetter.x = Utils.randInt(5, screenWidth - 5 - newLetter.width);
-        newLetter.y = -newLetter.height * 3 / 4;
-        newLetter.moveCntr = 0;
+        if (singleLetterMode) {
+            letters.clear();
+            newLetter.x = screenWidth / 2 - newLetter.width / 2;
+            newLetter.y = screenHeight / 2 - newLetter.height / 2;
+        } else {
+            newLetter.x = Utils.randInt(5, screenWidth - 5 - newLetter.width);
+            newLetter.y = -newLetter.height * 3 / 4;
+            newLetter.moveCntr = 0;
+        }
         letters.add(newLetter);
         if (playSound)
             playLetterSound(c);
