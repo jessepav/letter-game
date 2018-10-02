@@ -227,48 +227,50 @@ final class GameWindow implements KeyListener
         g.dispose();
         bi = null;
 
-        String[] cloudPaths = Utils.pref("cloud-images", "").split(",\\s*");
-        int numCloudImages = cloudPaths.length;
-        if (numCloudImages == 0)
-            return false;
-        BufferedImage[] cloudImages = new BufferedImage[numCloudImages];
-        for (int i = 0; i < numCloudImages; i++) {
-            bi = GuiUtils.loadTranslucentImage(Paths.get(cloudPaths[i]));
-            if (bi == null)
-                return false;
-            int w = (int) (bi.getWidth() * backgroundScaleX);
-            int h = (int) (bi.getHeight() * backgroundScaleY);
-            cloudImages[i] = GuiUtils.createTranslucentImage(w, h);
-            g = cloudImages[i].createGraphics();
-            g.setRenderingHints(GuiUtils.getQualityRenderingHints());
-            g.drawImage(bi, 0, 0, w, h, null);
-            g.dispose();
-        }
-        bi = null;
-
         numclouds = Utils.intPref("numclouds", 3);
-        clouds = new ArrayList<>(numclouds);
-        for (int i = 0; i < numclouds; i++) {
-            Cloud c = new Cloud();
-            c.image = cloudImages[i % numCloudImages];
-            c.width = c.image.getWidth();
-            c.height = c.image.getHeight();
-            clouds.add(c);
-        }
+        if (numclouds != 0) {
+            String[] cloudPaths = Utils.pref("cloud-images", "").split(",\\s*");
+            int numCloudImages = cloudPaths.length;
+            if (numCloudImages == 0)
+                return false;
+            BufferedImage[] cloudImages = new BufferedImage[numCloudImages];
+            for (int i = 0; i < numCloudImages; i++) {
+                bi = GuiUtils.loadTranslucentImage(Paths.get(cloudPaths[i]));
+                if (bi == null)
+                    return false;
+                int w = (int) (bi.getWidth() * backgroundScaleX);
+                int h = (int) (bi.getHeight() * backgroundScaleY);
+                cloudImages[i] = GuiUtils.createTranslucentImage(w, h);
+                g = cloudImages[i].createGraphics();
+                g.setRenderingHints(GuiUtils.getQualityRenderingHints());
+                g.drawImage(bi, 0, 0, w, h, null);
+                g.dispose();
+            }
+            bi = null;
 
-        String[] sa = Utils.pref("cloud-speed-range", "32,96").split(",\\s*");
-        if (sa.length != 2)
-            return false;
-        cloudMinSpeed = Utils.parseInt(sa[0], 32);
-        cloudMaxSpeed = Utils.parseInt(sa[1], 96);
+            clouds = new ArrayList<>(numclouds);
+            for (int i = 0; i < numclouds; i++) {
+                Cloud c = new Cloud();
+                c.image = cloudImages[i % numCloudImages];
+                c.width = c.image.getWidth();
+                c.height = c.image.getHeight();
+                clouds.add(c);
+            }
 
-        // Distribute the clouds around the sky, with varying speed
-        int skyZoneSize = screenWidth / numclouds;
-        for (int i = 0; i < numclouds; i++) {
-            Cloud c = clouds.get(i);
-            c.x = skyZoneSize*i + Utils.randInt(10, skyZoneSize-10);
-            c.y = Utils.randInt(30, screenHeight / 3);
-            c.speed = Utils.randInt(cloudMinSpeed, cloudMaxSpeed);
+            String[] sa = Utils.pref("cloud-speed-range", "32,96").split(",\\s*");
+            if (sa.length != 2)
+                return false;
+            cloudMinSpeed = Utils.parseInt(sa[0], 32);
+            cloudMaxSpeed = Utils.parseInt(sa[1], 96);
+
+            // Distribute the clouds around the sky, with varying speed
+            int skyZoneSize = screenWidth / numclouds;
+            for (int i = 0; i < numclouds; i++) {
+                Cloud c = clouds.get(i);
+                c.x = skyZoneSize*i + Utils.randInt(10, skyZoneSize-10);
+                c.y = Utils.randInt(30, screenHeight / 3);
+                c.speed = Utils.randInt(cloudMinSpeed, cloudMaxSpeed);
+            }
         }
 
         TinySound.init();
@@ -282,7 +284,7 @@ final class GameWindow implements KeyListener
         playSound = Utils.booleanPref("play-sounds", true);
         if (playSound) {
             soundVolume = Utils.floatPref("sound-volume", 1.0f);
-            sa = Utils.pref("letter-sounds", "").split(",\\s*");
+            String[] sa = Utils.pref("letter-sounds", "").split(",\\s*");
             int n = sa.length;
             if (n == 0)
                 return false;
@@ -317,15 +319,17 @@ final class GameWindow implements KeyListener
     }
 
     private void updateObjects() {
-        for (Cloud c : clouds) {
-            c.moveCntr += c.speed;
-            int px = c.moveCntr >> 6;
-            c.moveCntr &= 0x3F;  // zero out everything but the bottom 6 bits
-            c.x += px;
-            if (c.x > (screenWidth + c.width)) {
-                c.x = -c.width / 2;
-                c.y = Utils.randInt(30, screenHeight / 3);
-                c.speed = Utils.randInt(cloudMinSpeed, cloudMaxSpeed);
+        if (numclouds != 0) {
+            for (Cloud c : clouds) {
+                c.moveCntr += c.speed;
+                int px = c.moveCntr >> 6;
+                c.moveCntr &= 0x3F;  // zero out everything but the bottom 6 bits
+                c.x += px;
+                if (c.x > (screenWidth + c.width)) {
+                    c.x = -c.width / 2;
+                    c.y = Utils.randInt(30, screenHeight / 3);
+                    c.speed = Utils.randInt(cloudMinSpeed, cloudMaxSpeed);
+                }
             }
         }
 
@@ -345,8 +349,10 @@ final class GameWindow implements KeyListener
 
     private void drawBackground(Graphics2D g) {
         g.drawImage(background, 0, 0, null);
-        for (Cloud c : clouds) {
-            g.drawImage(c.image, c.x - c.width/2, c.y - c.height/2, null);
+        if (numclouds != 0) {
+            for (Cloud c : clouds) {
+                g.drawImage(c.image, c.x - c.width/2, c.y - c.height/2, null);
+            }
         }
     }
 
