@@ -359,7 +359,7 @@ final class GameWindow implements KeyListener
 
     private void drawLetters(Graphics2D g) {
         for (Letter l : letters) {
-            g.drawImage(l.image, l.x, l.y, null);
+            g.drawImage(l.image, l.x, l.y, l.width, l.height, null);
         }
     }
 
@@ -385,7 +385,8 @@ final class GameWindow implements KeyListener
             newLetter.y = screenHeight / 2 - newLetter.height / 2;
         } else {
             newLetter.x = Utils.randInt(5, screenWidth - 5 - newLetter.width);
-            newLetter.y = -newLetter.height * 3 / 4;
+            //newLetter.y = -newLetter.height * 3 / 4;
+            newLetter.y = 0;
         }
         letters.add(newLetter);
         if (playSound)
@@ -429,8 +430,11 @@ final class GameWindow implements KeyListener
         g.setColor(color);
         layout.draw(g, m + xoff, m + yoff);
         g.dispose();
+        if (singleLetterMode)
+            letterScale = screenHeight / l.height;
+
         if (letterScale != 1) {
-            l.image = GuiUtils.getScaledImage(l.image, letterScale);
+            l.imageScale = letterScale;
             l.width *= letterScale;
             l.height *= letterScale;
         }

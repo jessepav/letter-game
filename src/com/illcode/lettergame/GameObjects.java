@@ -16,6 +16,7 @@ final class GameObjects
     {
         char letter;
         BufferedImage image;
+        int imageScale;
         int x, y, width, height;
 
         Letter makeCopy() {
