@@ -51,6 +51,7 @@ final class GameWindow implements KeyListener
     private List<Letter> letters;
     private Color[] letterColors;
     private Color shadowColor;
+    private int letterMoveCntr;
     private boolean singleLetterMode;
 
     private Music music;
@@ -335,11 +336,11 @@ final class GameWindow implements KeyListener
 
         if (!singleLetterMode) {
             ListIterator<Letter> iter = letters.listIterator(0);
+            letterMoveCntr += letterSpeed;
+            int px = letterMoveCntr >> 6;
+            letterMoveCntr &= 0x3F;
             while (iter.hasNext()) {
                 Letter l = iter.next();
-                l.moveCntr += letterSpeed;
-                int px = l.moveCntr >> 6;
-                l.moveCntr &= 0x3F;
                 l.y += px;
                 if (l.y > screenHeight)
                     iter.remove();
@@ -385,7 +386,6 @@ final class GameWindow implements KeyListener
         } else {
             newLetter.x = Utils.randInt(5, screenWidth - 5 - newLetter.width);
             newLetter.y = -newLetter.height * 3 / 4;
-            newLetter.moveCntr = 0;
         }
         letters.add(newLetter);
         if (playSound)
