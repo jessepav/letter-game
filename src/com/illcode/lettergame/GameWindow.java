@@ -35,7 +35,7 @@ final class GameWindow implements KeyListener
     private GraphicsDevice graphicsDevice;
     private BufferStrategy strategy;
     private FontRenderContext letterFRC;
-    private int letterScale;
+    private int letterScale, letterZoom, letterZoomSpeed;
 
     private volatile boolean quitFlag;
     private BlockingQueue<Character> charQueue;
@@ -100,11 +100,10 @@ final class GameWindow implements KeyListener
         frame.setIgnoreRepaint(true);
         frame.addKeyListener(this);
         frame.addWindowListener(new GameWindowListener());
+        frame.setUndecorated(true);
         if (fullscreen) {
-            frame.setUndecorated(true);
             graphicsDevice.setFullScreenWindow(frame);
         } else {
-            frame.setTitle("Little Bun's Letter Game");
             frame.setSize(screenWidth, screenHeight);
             frame.setResizable(false);
             frame.setLocationRelativeTo(null);
@@ -115,6 +114,8 @@ final class GameWindow implements KeyListener
 
         letterSpeed = Utils.intPref("letter-speed", 5);
         letterScale = Utils.intPref("letter-scale", 2);
+        letterZoom = Utils.intPref("letter-zoom", 8);
+        letterZoomSpeed = Utils.intPref("letter-zoom-speed", 4) * letterScale;
         singleLetterMode = Utils.booleanPref("single-letter-mode", false);
 
         initialized = true;
@@ -341,9 +342,17 @@ final class GameWindow implements KeyListener
             letterMoveCntr &= 0x3F;
             while (iter.hasNext()) {
                 Letter l = iter.next();
-                l.y += px;
-                if (l.y > screenHeight)
-                    iter.remove();
+                if (l.zoom > 0) {
+                    l.zoom -= letterZoomSpeed;
+                    l.width -= letterZoomSpeed;
+                    l.height -= letterZoomSpeed;
+                    l.x += letterZoomSpeed / 2;
+                    //l.y += letterZoomSpeed / 2;
+                } else {
+                    l.y += px;
+                    if (l.y > screenHeight)
+                        iter.remove();
+                }
             }
         }
     }
@@ -384,8 +393,10 @@ final class GameWindow implements KeyListener
             newLetter.x = screenWidth / 2 - newLetter.width / 2;
             newLetter.y = screenHeight / 2 - newLetter.height / 2;
         } else {
+            newLetter.zoom = letterZoom * letterScale;
+            newLetter.width += newLetter.zoom;
+            newLetter.height += newLetter.zoom;
             newLetter.x = Utils.randInt(5, screenWidth - 5 - newLetter.width);
-            //newLetter.y = -newLetter.height * 3 / 4;
             newLetter.y = 0;
         }
         letters.add(newLetter);
@@ -434,7 +445,6 @@ final class GameWindow implements KeyListener
             letterScale = screenHeight / l.height;
 
         if (letterScale != 1) {
-            l.imageScale = letterScale;
             l.width *= letterScale;
             l.height *= letterScale;
         }
