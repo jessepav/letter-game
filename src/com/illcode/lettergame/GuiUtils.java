@@ -11,6 +11,7 @@ public final class GuiUtils
     static GraphicsEnvironment graphicsEnvironment;
     static GraphicsConfiguration graphicsConfiguration;
     static Toolkit toolkit;
+    static Cursor blankCursor;
     static Font letterFont, monoFont;
 
     private static RenderingHints fastRenderingHints, qualityRenderingHints;
@@ -171,5 +172,13 @@ public final class GuiUtils
     static void registerGameFonts() {
         letterFont = Font.decode(Utils.pref("letter-font", "Lucida Sans-PLAIN-24"));
         monoFont = Font.decode(Utils.pref("mono-font", "Lucida Sans Typewriter-PLAIN-12"));
+    }
+
+    static Cursor getBlankCursor() {
+        if (blankCursor == null) {
+            BufferedImage bi = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
+            blankCursor = toolkit.createCustomCursor(bi, new Point(0, 0), "Blank Cursor");
+        }
+        return blankCursor;
     }
 }

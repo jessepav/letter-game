@@ -16,6 +16,7 @@ final class GameObjects
     {
         char letter;
         BufferedImage image;
+        int originalWidth, originalHeight;
         int zoom;
         int x, y, width, height;
 
@@ -23,8 +24,8 @@ final class GameObjects
             Letter l = new Letter();
             l.letter = letter;
             l.image = image;
-            l.width = width;
-            l.height = height;
+            l.width = originalWidth;
+            l.height = originalHeight;
             return l;
         }
     }

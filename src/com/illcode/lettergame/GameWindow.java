@@ -42,6 +42,7 @@ final class GameWindow implements KeyListener
 
     private BufferedImage background;
     private float backgroundScaleX, backgroundScaleY;
+    private BufferedImage spaceImage;
 
     private List<Cloud> clouds;
     private int numclouds;
@@ -101,6 +102,7 @@ final class GameWindow implements KeyListener
         frame.addKeyListener(this);
         frame.addWindowListener(new GameWindowListener());
         frame.setUndecorated(true);
+        frame.setCursor(GuiUtils.getBlankCursor());
         if (fullscreen) {
             graphicsDevice.setFullScreenWindow(frame);
         } else {
@@ -228,6 +230,10 @@ final class GameWindow implements KeyListener
         g.drawImage(bi, 0, 0, screenWidth, screenHeight, null);
         g.dispose();
         bi = null;
+
+        spaceImage = GuiUtils.loadBitmaskImage(Paths.get(Utils.pref("space-image", "assets/space-image.png")), -1);
+        if (spaceImage == null)
+            return false;
 
         numclouds = Utils.intPref("numclouds", 3);
         if (numclouds != 0) {
@@ -373,12 +379,6 @@ final class GameWindow implements KeyListener
     }
 
     private void addLetter(char c) {
-        if (c == ' ') {
-            if (singleLetterMode)
-                letters.clear();
-            return;
-        }
-
         Letter archetype = letterArchetypes.get(c);
         Letter newLetter;
         if (archetype == null) {
@@ -425,28 +425,36 @@ final class GameWindow implements KeyListener
 
     private Letter createLetter(char c, Color color) {
         Letter l = new Letter();
-        TextLayout layout = new TextLayout(Character.toString(c), GuiUtils.letterFont, letterFRC);
-        Rectangle2D r = layout.getPixelBounds(null, 0, 0);
-        int xoff = (int)-r.getX();
-        int yoff = (int)-r.getY();
-        int w = (int)r.getWidth();
-        int h = (int)r.getHeight();
-        int m = 5;  // margin
-        l.width = w + 2*m;
-        l.height = h + 2*m;
-        l.image = GuiUtils.createBitmaskImage(l.width, l.height);
-        Graphics2D g = l.image.createGraphics();
-        g.setColor(shadowColor);
-        layout.draw(g, m + xoff + 3, m + yoff + 3);
-        g.setColor(color);
-        layout.draw(g, m + xoff, m + yoff);
-        g.dispose();
+        if (c == ' ') {
+            l.image = spaceImage;
+            l.width = l.originalWidth = spaceImage.getWidth();
+            l.height = l.originalHeight = spaceImage.getHeight();
+        } else {
+            TextLayout layout = new TextLayout(Character.toString(c), GuiUtils.letterFont, letterFRC);
+            Rectangle2D r = layout.getPixelBounds(null, 0, 0);
+            int xoff = (int)-r.getX();
+            int yoff = (int)-r.getY();
+            int w = (int)r.getWidth();
+            int h = (int)r.getHeight();
+            int m = 5;  // margin
+            l.width = l.originalWidth = w + 2*m;
+            l.height = l.originalHeight = h + 2*m;
+            l.image = GuiUtils.createBitmaskImage(l.width, l.height);
+            Graphics2D g = l.image.createGraphics();
+            g.setColor(shadowColor);
+            layout.draw(g, m + xoff + 3, m + yoff + 3);
+            g.setColor(color);
+            layout.draw(g, m + xoff, m + yoff);
+            g.dispose();
+        }
         if (singleLetterMode)
             letterScale = screenHeight / l.height;
 
         if (letterScale != 1) {
             l.width *= letterScale;
             l.height *= letterScale;
+            l.originalWidth = l.width;
+            l.originalHeight = l.height;
         }
         return l;
     }
