@@ -113,6 +113,8 @@ final class GameWindow implements KeyListener
         }
         frame.createBufferStrategy(2);
         strategy = frame.getBufferStrategy();
+        System.out.println("Hardware accelerated back-buffer: " +
+            strategy.getCapabilities().getBackBufferCapabilities().isAccelerated());
 
         letterSpeed = Utils.intPref("letter-speed", 5);
         letterScale = Utils.intPref("letter-scale", 2);
