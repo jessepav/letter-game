@@ -171,10 +171,17 @@ final class GameWindow implements KeyListener
             music.play(true);
 
         int loopDelay = Utils.intPref("loop-delay", 40);
+
+        boolean reportDrawTime = Utils.booleanPref("report-draw-time", false);
+        int framecount = 0;
+        long totalElapsedMicro = 0;
+
         while (!quitFlag) {
             Character c = charQueue.poll();
             if (c != null)
                 addLetter(c);
+
+            long tstart = System.nanoTime();
 
             do {
                 do {
@@ -189,6 +196,16 @@ final class GameWindow implements KeyListener
                 } while (strategy.contentsRestored());
                 strategy.show();
             } while (strategy.contentsLost());
+
+            long elapsed = System.nanoTime() - tstart;
+            totalElapsedMicro += elapsed / 1000;
+            framecount++;
+            if (framecount == 100) {
+                if (reportDrawTime)
+                    System.out.println("Average per-frame uS: " + totalElapsedMicro / framecount);
+                framecount = 0;
+                totalElapsedMicro = 0;
+            }
 
             try {
                 Thread.sleep(loopDelay);
