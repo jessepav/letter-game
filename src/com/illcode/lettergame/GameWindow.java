@@ -79,6 +79,9 @@ final class GameWindow implements KeyListener
 
         graphicsDevice = GuiUtils.graphicsEnvironment.getDefaultScreenDevice();
         fullscreen = Utils.booleanPref("fullscreen", false) && graphicsDevice.isFullScreenSupported();
+        String fsProp = System.getProperty("lettergame.fullscreen");
+        if (fsProp != null)
+            fullscreen = Utils.parseBoolean(fsProp);
 
         if (fullscreen) {
             DisplayMode mode = graphicsDevice.getDisplayMode();
@@ -101,7 +104,10 @@ final class GameWindow implements KeyListener
         frame.setIgnoreRepaint(true);
         frame.addKeyListener(this);
         frame.addWindowListener(new GameWindowListener());
-        frame.setUndecorated(true);
+        if (fullscreen)
+            frame.setUndecorated(true);
+        else
+            frame.setTitle("LetterGame");
         frame.setCursor(GuiUtils.getBlankCursor());
         if (fullscreen) {
             graphicsDevice.setFullScreenWindow(frame);
@@ -113,8 +119,6 @@ final class GameWindow implements KeyListener
         }
         frame.createBufferStrategy(2);
         strategy = frame.getBufferStrategy();
-        System.out.println("Hardware accelerated back-buffer: " +
-            strategy.getCapabilities().getBackBufferCapabilities().isAccelerated());
 
         letterSpeed = Utils.intPref("letter-speed", 5);
         letterScale = Utils.intPref("letter-scale", 2);
@@ -200,7 +204,7 @@ final class GameWindow implements KeyListener
             long elapsed = System.nanoTime() - tstart;
             totalElapsedMicro += elapsed / 1000;
             framecount++;
-            if (framecount == 100) {
+            if (framecount == 50) {
                 if (reportDrawTime)
                     System.out.println("Average per-frame uS: " + totalElapsedMicro / framecount);
                 framecount = 0;
